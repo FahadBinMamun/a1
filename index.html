@@ -111,7 +111,7 @@
                             </ul>
                         </div>
                     </div>
-                     <p class="text-center mt-6 text-gray-600">আমি তোমাকে ভয় দেখাতে চাই না, bou। আমি শুধু চাই তুমি সুস্থ থাকো, সুন্দর থাকো। তোমার কোনো ক্ষতি হোক, তা আমি চাই না।</p>
+                     <p class="text-center mt-6 text-gray-600">আমি তোমাকে ভয় দেখাতে চাই না, বউ। আমি শুধু চাই তুমি সুস্থ থাকো, সুন্দর থাকো। তোমার কোনো ক্ষতি হোক, তা আমি চাই না।</p>
                 </section>
             </main>
 
@@ -128,7 +128,7 @@
 
         // --- DO NOT EDIT THIS ---
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ananna-challenge-v4';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ananna-challenge-v5-final';
         const challengeUserId = 'ananna-doraemon-challenge-016'; // A fixed ID for Ananna
         // --- END ---
 
@@ -163,9 +163,31 @@
         let logsUnsubscribe = null;
         
         const getTodayDateString = () => new Date().toISOString().split('T')[0];
+        
+        // --- CORRECTED LOGIC ---
+        // 1. Authenticate first when the page loads
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) { 
+                    console.error("Sign-in error:", error);
+                    pinError.textContent = "ডেটাবেস সংযোগে সমস্যা হচ্ছে।";
+                }
+            }
+            // Once user is authenticated, the PIN screen is ready to be used.
+        });
 
-        // PIN Logic
+        // 2. PIN Logic now works within an authenticated context
         enterBtn.addEventListener('click', () => {
+            if (!auth.currentUser) {
+                pinError.textContent = "অনুগ্রহ করে একটু অপেক্ষা করুন...";
+                return;
+            }
             const pin = pinInput.value;
             if (pin === '16' || pin === '1616') {
                 pinScreen.classList.add('hidden');
@@ -183,6 +205,7 @@
             }
         });
 
+        // 3. Setup the UI and start listening to data
         function setupApp(mode) {
             if (mode === 'user') {
                 mainHeader.textContent = 'আমার Ananna-র জন্য';
@@ -195,20 +218,7 @@
                 startState.querySelector('p').textContent = "সে এখনও চ্যালেঞ্জ শুরু করেনি।";
                 startState.querySelector('button').classList.add('hidden');
             }
-            
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    listenForChallengeData();
-                } else {
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (error) { console.error("Sign-in error:", error); }
-                }
-            });
+            listenForChallengeData();
         }
 
         // Firestore References
