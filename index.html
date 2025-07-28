@@ -122,21 +122,31 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- DO NOT EDIT THIS ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ananna-challenge-v5-final';
-        const challengeUserId = 'ananna-doraemon-challenge-016'; // A fixed ID for Ananna
-        // --- END ---
+        // Your web app's Firebase configuration from your Firebase project
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsIrbUUq5o9gErERw15A0WGEK5bH52o_A",
+            authDomain: "ananna1-f1616.firebaseapp.com",
+            projectId: "ananna1-f1616",
+            storageBucket: "ananna1-f1616.appspot.com",
+            messagingSenderId: "196465650362",
+            appId: "1:196465650362:web:84a053f7304a303ac47083",
+            measurementId: "G-W06HE0WPRP"
+        };
 
+        // --- App Specific Constants ---
+        const challengeUserId = 'ananna-doraemon-challenge-016';
+
+        // --- Firebase Initialization ---
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // DOM Elements
+        // --- DOM Elements ---
         const pinScreen = document.getElementById('pin-screen');
         const mainContent = document.getElementById('main-content');
         const pinInput = document.getElementById('pin-input');
@@ -164,25 +174,18 @@
         
         const getTodayDateString = () => new Date().toISOString().split('T')[0];
         
-        // --- CORRECTED LOGIC ---
-        // 1. Authenticate first when the page loads
+        // --- Authentication and App Start ---
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    await signInAnonymously(auth);
                 } catch (error) { 
-                    console.error("Sign-in error:", error);
+                    console.error("Anonymous Sign-in error:", error);
                     pinError.textContent = "ডেটাবেস সংযোগে সমস্যা হচ্ছে।";
                 }
             }
-            // Once user is authenticated, the PIN screen is ready to be used.
         });
 
-        // 2. PIN Logic now works within an authenticated context
         enterBtn.addEventListener('click', () => {
             if (!auth.currentUser) {
                 pinError.textContent = "অনুগ্রহ করে একটু অপেক্ষা করুন...";
@@ -205,7 +208,6 @@
             }
         });
 
-        // 3. Setup the UI and start listening to data
         function setupApp(mode) {
             if (mode === 'user') {
                 mainHeader.textContent = 'আমার Ananna-র জন্য';
@@ -221,10 +223,10 @@
             listenForChallengeData();
         }
 
-        // Firestore References
-        const getChallengeDocRef = () => doc(db, `artifacts/${appId}/challenges/${challengeUserId}`);
-        const getLogsCollectionRef = () => collection(db, `artifacts/${appId}/challenges/${challengeUserId}/logs`);
-        const getLogDocRef = (dateStr) => doc(db, `artifacts/${appId}/challenges/${challengeUserId}/logs/${dateStr}`);
+        // --- Firestore Logic ---
+        const getChallengeDocRef = () => doc(db, "challenges", challengeUserId);
+        const getLogsCollectionRef = () => collection(db, "challenges", challengeUserId, "logs");
+        const getLogDocRef = (dateStr) => doc(db, "challenges", challengeUserId, "logs", dateStr);
 
         function listenForChallengeData() {
             if (challengeUnsubscribe) challengeUnsubscribe();
